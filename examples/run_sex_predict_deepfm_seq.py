@@ -36,15 +36,17 @@ default_values = {
 dense_features = ['times_paid']
 sparse_features = ['age_group', 'industry', 'job', 'marital_status', 'serv_pref_1',
        'serv_pref_2', 'serv_pref_3', 'serv_pref_4']
+varlen_sparse_features = ['func_list_multilabel_1', 'func_list_multilabel_2', 'func_list_multilabel_3',
+                          'func_list_multilabel_4', 'func_list_multilabel_5']
 
 def read_file(file_name):
     """读取数据, 并处理默认值"""
 
     data = pd.read_csv(file_name)\
         .fillna(value=default_values)\
-        .drop(columns=['func_list_multilabel_1','func_list_multilabel_2','func_list_multilabel_3',
-                       'func_list_multilabel_4','func_list_multilabel_5','user_id'])
+        .drop(columns=['user_id'])
     data[sparse_features] = data[sparse_features].astype('int')
+    data[varlen_sparse_features] = data[varlen_sparse_features].apply(seq_feature_process) #序列特征处理
     return data
 
 def generate_sparse_index_dict(training_data, sparse_features, output_file="sparse_index_dict.json"):
@@ -70,6 +72,18 @@ def get_sparse_index(x, sparse_index_dict, feat):
     else:
         raise LookupError("{} is not in sparse_index_dict!".format(feat))
 
+def seq_feature_process(x):
+    """序列特征的处理"""
+    res = []
+    if x is None:
+        return [-1]
+    else:
+        items = eval(x)
+        for item in items:
+            if item not in res:
+                res.append(item)
+        return res
+
 if __name__ == "__main__":
     # DeepFM网络超参数
     params = {
@@ -93,6 +107,8 @@ if __name__ == "__main__":
     sparse_index_dict_path = '/home/czm/Public/interview_user_sex_predictor/data/sparse_index_dict.json'
     model_path = './models/deepfm'
     log_path = './logs'
+
+    pdb.set_trace()
 
     training_data = read_file(training_data_path)
     valid_data = read_file(valid_data_path)

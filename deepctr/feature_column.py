@@ -1,3 +1,4 @@
+#coding:utf-8
 import tensorflow as tf
 from collections import namedtuple, OrderedDict
 from copy import copy
@@ -13,7 +14,7 @@ from .layers.utils import concat_func
 
 DEFAULT_GROUP_NAME = "default_group"
 
-
+"""定义sparse特征"""
 class SparseFeat(namedtuple('SparseFeat',
                             ['name', 'vocabulary_size', 'embedding_dim', 'use_hash', 'vocabulary_path', 'dtype', 'embeddings_initializer',
                              'embedding_name',
@@ -39,7 +40,7 @@ class SparseFeat(namedtuple('SparseFeat',
     def __hash__(self):
         return self.name.__hash__()
 
-
+"""定义序列特征"""
 class VarLenSparseFeat(namedtuple('VarLenSparseFeat',
                                   ['sparsefeat', 'maxlen', 'combiner', 'length_name', 'weight_name', 'weight_norm'])):
     __slots__ = ()
@@ -91,7 +92,7 @@ class VarLenSparseFeat(namedtuple('VarLenSparseFeat',
     def __hash__(self):
         return self.name.__hash__()
 
-
+"""定义dense特征"""
 class DenseFeat(namedtuple('DenseFeat', ['name', 'dimension', 'dtype', 'transform_fn'])):
     """ Dense feature
     Args:
@@ -126,7 +127,7 @@ def get_feature_names(feature_columns):
 
 
 def build_input_features(feature_columns, prefix=''):
-    """定义输入特征, keras Input层"""
+    """定义模型输入特征"""
 
     input_features = OrderedDict()
     for fc in feature_columns:
@@ -150,7 +151,7 @@ def build_input_features(feature_columns, prefix=''):
 
     return input_features
 
-# 获取线性模型的输出
+"""获取线性模型的输出"""
 def get_linear_logit(features, feature_columns, units=1, use_bias=False, seed=1024, prefix='linear',
                      l2_reg=0, sparse_feat_refine_weight=None):
     linear_feature_columns = copy(feature_columns)
@@ -195,6 +196,7 @@ def get_linear_logit(features, feature_columns, units=1, use_bias=False, seed=10
 
 def input_from_feature_columns(features, feature_columns, l2_reg, seed, prefix='', seq_mask_zero=True,
                                support_dense=True, support_group=False):
+    """sparse特征id生成emb向量"""
     sparse_feature_columns = list(
         filter(lambda x: isinstance(x, SparseFeat), feature_columns)) if feature_columns else []
     varlen_sparse_feature_columns = list(
@@ -214,3 +216,5 @@ def input_from_feature_columns(features, feature_columns, l2_reg, seed, prefix='
     if not support_group:
         group_embedding_dict = list(chain.from_iterable(group_embedding_dict.values()))
     return group_embedding_dict, dense_value_list
+
+

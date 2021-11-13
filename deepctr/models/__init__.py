@@ -5,6 +5,7 @@ from .dcn import DCN
 from .dcnmix import DCNMix
 from .deepfefm import DeepFEFM
 from .deepfm import DeepFM
+from .deepfm_seq import DeepFMSeq #新增deepfm_seq模型
 from .difm import DIFM
 from .fgcnn import FGCNN
 from .fibinet import FiBiNET
