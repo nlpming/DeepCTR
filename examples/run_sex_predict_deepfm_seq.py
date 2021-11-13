@@ -46,7 +46,9 @@ def read_file(file_name):
         .fillna(value=default_values)\
         .drop(columns=['user_id'])
     data[sparse_features] = data[sparse_features].astype('int')
-    data[varlen_sparse_features] = data[varlen_sparse_features].apply(seq_feature_process) #序列特征处理
+
+    for feat in varlen_sparse_features:
+        data[feat] = data[feat].apply(seq_feature_process) #序列特征处理
     return data
 
 def generate_sparse_index_dict(training_data, sparse_features, output_file="sparse_index_dict.json"):
