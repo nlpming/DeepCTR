@@ -16,7 +16,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = ""
 
 #加载deepctr模块
 sys.path.append("../")
-from deepctr.models import DeepFM
+from deepctr.models import DeepFMSeq
 from deepctr.feature_column import SparseFeat, DenseFeat, get_feature_names
 
 # 默认值
@@ -154,7 +154,7 @@ if __name__ == "__main__":
 
     #pdb.set_trace()
     # 定义模型、优化器、损失函数
-    model = DeepFM(linear_feature_columns, dnn_feature_columns,
+    model = DeepFMSeq(linear_feature_columns, dnn_feature_columns,
                    task='binary',
                    dnn_hidden_units=params['dnn_hidden_units'],
                    l2_reg_linear=params['l2_reg_linear'],
