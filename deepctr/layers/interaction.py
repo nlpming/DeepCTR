@@ -6,7 +6,7 @@ Authors:
     Harshit Pande
 
 """
-
+import pdb
 import itertools
 
 import tensorflow as tf
@@ -572,7 +572,6 @@ class FM(Layer):
         super(FM, self).build(input_shape)  # Be sure to call this somewhere!
 
     def call(self, inputs, **kwargs):
-
         if K.ndim(inputs) != 3:
             raise ValueError(
                 "Unexpected inputs dimensions %d, expect to be 3 dimensions"
@@ -580,12 +579,14 @@ class FM(Layer):
 
         concated_embeds_value = inputs
 
+        # FM二阶特征交叉: 和的平方 - 平方和
         square_of_sum = tf.square(reduce_sum(
-            concated_embeds_value, axis=1, keep_dims=True))
+            concated_embeds_value, axis=1, keep_dims=True)) #[bs,1,emb_size]
         sum_of_square = reduce_sum(
-            concated_embeds_value * concated_embeds_value, axis=1, keep_dims=True)
+            concated_embeds_value * concated_embeds_value, axis=1, keep_dims=True) #[bs,1,emb_size]
         cross_term = square_of_sum - sum_of_square
-        cross_term = 0.5 * reduce_sum(cross_term, axis=2, keep_dims=False)
+        cross_term = 0.5 * reduce_sum(cross_term, axis=2, keep_dims=False) #[bs,1]
+        #print("[fm debug] square_of_sum: {}, sum_of_square: {}, cross_term: {}".format(square_of_sum, sum_of_square, cross_term))
 
         return cross_term
 

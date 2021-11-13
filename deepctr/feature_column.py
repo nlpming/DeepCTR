@@ -126,6 +126,8 @@ def get_feature_names(feature_columns):
 
 
 def build_input_features(feature_columns, prefix=''):
+    """定义输入特征, keras Input层"""
+
     input_features = OrderedDict()
     for fc in feature_columns:
         if isinstance(fc, SparseFeat):
@@ -148,7 +150,7 @@ def build_input_features(feature_columns, prefix=''):
 
     return input_features
 
-
+# 获取线性模型的输出
 def get_linear_logit(features, feature_columns, units=1, use_bias=False, seed=1024, prefix='linear',
                      l2_reg=0, sparse_feat_refine_weight=None):
     linear_feature_columns = copy(feature_columns)

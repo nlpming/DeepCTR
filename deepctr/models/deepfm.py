@@ -38,28 +38,39 @@ def DeepFM(linear_feature_columns, dnn_feature_columns, fm_group=(DEFAULT_GROUP_
     :return: A Keras model instance.
     """
 
+    # 定义特征输入Layer: Input对象
     features = build_input_features(
         linear_feature_columns + dnn_feature_columns)
 
     inputs_list = list(features.values())
 
+    # linear层的输出: [bs,1]
     linear_logit = get_linear_logit(features, linear_feature_columns, seed=seed, prefix='linear',
                                     l2_reg=l2_reg_linear)
 
+    # sparse特征转成embedding
     group_embedding_dict, dense_value_list = input_from_feature_columns(features, dnn_feature_columns, l2_reg_embedding,
                                                                         seed, support_group=True)
 
+    # FM二阶交叉输出：[bs,1]
     fm_logit = add_func([FM()(concat_func(v, axis=1))
                          for k, v in group_embedding_dict.items() if k in fm_group])
 
+    # dnn输入：[bs,dense_size+sparse_size*emb_size]
     dnn_input = combined_dnn_input(list(chain.from_iterable(
         group_embedding_dict.values())), dense_value_list)
+
+    # 经过三层dnn,最后维度为：[bs,1]
     dnn_output = DNN(dnn_hidden_units, dnn_activation, l2_reg_dnn, dnn_dropout, dnn_use_bn, seed=seed)(dnn_input)
     dnn_logit = tf.keras.layers.Dense(
         1, use_bias=False, kernel_initializer=tf.keras.initializers.glorot_normal(seed=seed))(dnn_output)
 
+    # linear + FM-2 order + dnn输出fusion: [bs,1]
     final_logit = add_func([linear_logit, fm_logit, dnn_logit])
 
-    output = PredictionLayer(task)(final_logit)
+    output = PredictionLayer(task)(final_logit) #sigmoid激活函数
     model = tf.keras.models.Model(inputs=inputs_list, outputs=output)
     return model
+
+
+

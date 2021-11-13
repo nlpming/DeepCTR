@@ -241,7 +241,7 @@ class PredictionLayer(Layer):
         x = inputs
         if self.use_bias:
             x = tf.nn.bias_add(x, self.global_bias, data_format='NHWC')
-        if self.task == "binary":
+        if self.task == "binary": #binary任务
             x = tf.sigmoid(x)
 
         output = tf.reshape(x, (-1, 1))
