@@ -41,6 +41,7 @@ def DIN(dnn_feature_columns, history_feature_list, dnn_use_bn=False,
 
     features = build_input_features(dnn_feature_columns)
 
+    # sparse features; dense features; valen sparse features;
     sparse_feature_columns = list(
         filter(lambda x: isinstance(x, SparseFeat), dnn_feature_columns)) if dnn_feature_columns else []
     dense_feature_columns = list(

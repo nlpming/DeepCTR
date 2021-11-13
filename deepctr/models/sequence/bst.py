@@ -17,7 +17,6 @@ from ...layers.core import DNN, PredictionLayer
 from ...layers.sequence import Transformer, AttentionSequencePoolingLayer
 from ...layers.utils import concat_func, combined_dnn_input
 
-
 def BST(dnn_feature_columns, history_feature_list, transformer_num=1, att_head_num=8,
         use_bn=False, dnn_hidden_units=(256, 128, 64), dnn_activation='relu', l2_reg_dnn=0,
         l2_reg_embedding=1e-6, dnn_dropout=0.0, seed=1024, task='binary'):
@@ -65,13 +64,21 @@ def BST(dnn_feature_columns, history_feature_list, transformer_num=1, att_head_n
     embedding_dict = create_embedding_matrix(dnn_feature_columns, l2_reg_embedding, seed, prefix="",
                                              seq_mask_zero=True)
 
+    # query sparse feature embedding: [bs, 1, emb_size]
     query_emb_list = embedding_lookup(embedding_dict, features, sparse_feature_columns,
                                       return_feat_list=history_feature_list, to_list=True)
+
+    # history feature embedding: [bs, maxlen, emb_size]
     hist_emb_list = embedding_lookup(embedding_dict, features, history_feature_columns,
                                      return_feat_list=history_fc_names, to_list=True)
+
+    # dnn input sparse feature embedding: [bs, 1, emb_size]
     dnn_input_emb_list = embedding_lookup(embedding_dict, features, sparse_feature_columns,
                                           mask_feat_list=history_feature_list, to_list=True)
+
+    # dense feature: [bs,1]
     dense_value_list = get_dense_input(features, dense_feature_columns)
+
     sequence_embed_dict = varlen_embedding_lookup(embedding_dict, features, sparse_varlen_feature_columns)
     sequence_embed_list = get_varlen_pooling_list(sequence_embed_dict, features, sparse_varlen_feature_columns,
                                                   to_list=True)
@@ -81,6 +88,7 @@ def BST(dnn_feature_columns, history_feature_list, transformer_num=1, att_head_n
     deep_input_emb = concat_func(dnn_input_emb_list)
     hist_emb = concat_func(hist_emb_list)
 
+    # multi transformer layer
     transformer_output = hist_emb
     for _ in range(transformer_num):
         att_embedding_size = transformer_output.get_shape().as_list()[-1] // att_head_num
@@ -90,7 +98,7 @@ def BST(dnn_feature_columns, history_feature_list, transformer_num=1, att_head_n
                                         supports_masking=False, output_type=None)
         transformer_output = transformer_layer([transformer_output, transformer_output,
                                                 user_behavior_length, user_behavior_length])
-
+    # Attention layer
     attn_output = AttentionSequencePoolingLayer(att_hidden_units=(64, 16), weight_normalization=True,
                                                 supports_masking=False)([query_emb, transformer_output,
                                                                          user_behavior_length])

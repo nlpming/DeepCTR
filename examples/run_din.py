@@ -1,6 +1,15 @@
+#conding:utf-8
+import os
+import sys
 import numpy as np
+import pdb
 
+os.environ["CUDA_VISIBLE_DEVICES"] = ""
+
+#加载deepctr模块
+sys.path.append("../")
 from deepctr.models import DIN
+from deepctr.models.sequence import BST
 from deepctr.feature_column import SparseFeat, VarLenSparseFeat, DenseFeat, get_feature_names
 
 
@@ -35,8 +44,10 @@ def get_xy_fd():
 
 if __name__ == "__main__":
     x, y, feature_columns, behavior_feature_list = get_xy_fd()
-    model = DIN(feature_columns, behavior_feature_list)
-    # model = BST(feature_columns, behavior_feature_list,att_head_num=4)
+    pdb.set_trace()
+
+    #model = DIN(feature_columns, behavior_feature_list)
+    model = BST(feature_columns, behavior_feature_list,att_head_num=4)
     model.compile('adam', 'binary_crossentropy',
                   metrics=['binary_crossentropy'])
-    history = model.fit(x, y, verbose=1, epochs=10, validation_split=0.5)
+    history = model.fit(x, y, verbose=2, epochs=10, validation_split=0.5)
