@@ -32,7 +32,7 @@ def build_deepfm_model(sparse_features, dense_features, sparse_dict, dense_dict,
     dnn_feature_columns = []
     for feat in sparse_features:
         if feat != 'user_id':
-            dnn_feature_columns.append(SparseFeat(feat, vocabulary_size=training_data[feat].max() + 2,
+            dnn_feature_columns.append(SparseFeat(feat, vocabulary_size=len(sparse_dict[feat]) + 2,
                                                   embedding_dim=params["embedding_dim"]))
     for feat in dense_features:
         dnn_feature_columns.append(DenseFeat(feat, 1, ))
