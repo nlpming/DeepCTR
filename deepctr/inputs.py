@@ -109,7 +109,7 @@ def get_varlen_pooling_list(embedding_dict, features, varlen_sparse_feature_colu
     pooling_vec_list = defaultdict(list)
     for fc in varlen_sparse_feature_columns:
         feature_name = fc.name
-        combiner = fc.combiner
+        combiner = fc.combiner #emb通过何种方式融合：mean,max
         feature_length_name = fc.length_name
         if feature_length_name is not None:
             if fc.weight_name is not None:

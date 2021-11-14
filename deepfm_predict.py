@@ -12,10 +12,9 @@ from sklearn.metrics import log_loss, roc_auc_score
 #cpu运行
 os.environ["CUDA_VISIBLE_DEVICES"] = ""
 
-from deepctr.models import DeepFM
-from deepctr.feature_column import SparseFeat, DenseFeat, get_feature_names
 from deepfm_config import sparse_features, dense_features
 from deepfm_config import read_file, generate_sparse_dict, get_sparse_index, generate_dense_dict, get_dense_norm
+from deepfm_train import params, build_deepfm_model
 
 if __name__ == "__main__":
     # 1. 输入输出路径
@@ -56,8 +55,12 @@ if __name__ == "__main__":
     feature_names = dense_features + sparse_features
     test_model_input = {name: np.array(test_data[name].values.tolist()) for name in feature_names}
 
-    # 4. 加载模型并预测
-    model = tf.keras.models.load_model(model_path)
+    # 4. 构建模型
+    model = build_deepfm_model(sparse_features, dense_features, sparse_dict, dense_dict, params)
+
+    # 5. 加载模型参数并预测
+    model.load_weight(model_path)
+
     pred_ans = model.predict(test_model_input, batch_size=256) #预测结果为正样本概率值
     print("valid LogLoss", round(log_loss(test_data[target].values, pred_ans), 6))
     print("valid AUC", round(roc_auc_score(test_data[target].values, pred_ans), 6))

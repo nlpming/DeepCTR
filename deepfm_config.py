@@ -16,7 +16,7 @@ default_values = {
     "serv_pref_2": -1,
     "serv_pref_3": -1,
     "serv_pref_4": -1,
-    "times_paid": 3.4661927877947294  #均值
+    "times_paid": 3.466193  #均值
 }
 
 # dense,sparse特征
