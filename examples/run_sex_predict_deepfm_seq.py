@@ -17,7 +17,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = ""
 #加载deepctr模块
 sys.path.append("../")
 from deepctr.models import DeepFMSeq
-from deepctr.feature_column import SparseFeat, DenseFeat, get_feature_names
+from deepctr.feature_column import SparseFeat, VarLenSparseFeat, DenseFeat, get_feature_names
 
 # 默认值
 default_values = {
@@ -48,7 +48,7 @@ def read_file(file_name):
     data[sparse_features] = data[sparse_features].astype('int')
 
     for feat in varlen_sparse_features:
-        data[feat] = data[feat].apply(seq_feature_process) #序列特征处理
+        data[feat] = data[feat].apply(varlen_sparse_feature_process) #序列特征处理
     return data
 
 def generate_sparse_index_dict(training_data, sparse_features, output_file="sparse_index_dict.json"):
@@ -74,17 +74,53 @@ def get_sparse_index(x, sparse_index_dict, feat):
     else:
         raise LookupError("{} is not in sparse_index_dict!".format(feat))
 
-def seq_feature_process(x):
+def varlen_sparse_feature_process(x):
     """序列特征的处理"""
+
     res = []
-    if x is None:
-        return [-1]
-    else:
+    try:
         items = eval(x)
         for item in items:
+            if item is np.nan:
+                continue
             if item not in res:
                 res.append(item)
-        return res
+        if len(res) != 0:
+            return res
+        else:
+            return [-1]
+    except:
+        return [-1]
+
+def generate_varlen_sparse_index_dict(training_data, varlen_sparse_features, output_file="varlen_sparse_index_dict.json"):
+    res = {}
+    for feat in varlen_sparse_features:
+        data = list(training_data[feat].explode().unique())
+        unique_value = [int(x) for x in sorted(data)]
+        res[feat] = unique_value
+    with open(output_file,"w") as fp:
+        json.dump(res, fp)
+    print("save {} done.".format(output_file))
+
+def get_varlen_sparse_index(x, varlen_sparse_index_dict, feat, maxlen):
+    """序列特征对应idx"""
+    if feat in varlen_sparse_index_dict:
+        values = varlen_sparse_index_dict[feat]
+        res = []
+        for idx in x: #list
+            if idx in values:
+                res.append(values.index(idx)+1)
+            else:
+                res.append(len(values)) #unk问题
+
+        #maxlen长度
+        if len(res) >= maxlen:
+            res = res[0:maxlen]
+        else:
+            res += [0]*(maxlen - len(res)) #未达到maxlen，补充0;
+        return np.array(res)
+    else:
+        raise LookupError("{} is not in sparse_index_dict!".format(feat))
 
 if __name__ == "__main__":
     # DeepFM网络超参数
@@ -100,6 +136,7 @@ if __name__ == "__main__":
         "learning_rate": 0.001,
         "batch_size": 128,
         "epochs": 20,
+        "maxlen": 15
     }
 
     # 输入输出路径
@@ -107,10 +144,9 @@ if __name__ == "__main__":
     valid_data_path = '/home/czm/Public/interview_user_sex_predictor/data/train/valid.csv'
     test_data_path = '/home/czm/Public/interview_user_sex_predictor/data/train/test.csv'
     sparse_index_dict_path = '/home/czm/Public/interview_user_sex_predictor/data/sparse_index_dict.json'
-    model_path = './models/deepfm'
-    log_path = './logs'
-
-    pdb.set_trace()
+    varlen_sparse_index_dict_path = '/home/czm/Public/interview_user_sex_predictor/data/varlen_sparse_index_dict.json'
+    model_path = './models/deepfm_seq'
+    log_path = './logs/deepfm_seq'
 
     training_data = read_file(training_data_path)
     valid_data = read_file(valid_data_path)
@@ -138,23 +174,37 @@ if __name__ == "__main__":
         valid_data[feat] = valid_data[feat].apply(get_sparse_index, args=(sparse_index_dict, feat))
         test_data[feat] = test_data[feat].apply(get_sparse_index, args=(sparse_index_dict, feat))
 
+    # 序列离散特征id编码
+    varlen_sparse_index_dict = {}
+    generate_varlen_sparse_index_dict(training_data, varlen_sparse_features, output_file=varlen_sparse_index_dict_path)
+    with open(varlen_sparse_index_dict_path) as fp:
+        varlen_sparse_index_dict = json.load(fp)
+    if len(varlen_sparse_index_dict) == 0:
+        raise Exception("varlen_sparse_index_dict length is 0")
+
+    for feat in varlen_sparse_features:
+        training_data[feat] = training_data[feat].apply(get_varlen_sparse_index, args=(varlen_sparse_index_dict, feat, params['maxlen']))
+        valid_data[feat] = valid_data[feat].apply(get_varlen_sparse_index, args=(varlen_sparse_index_dict, feat, params['maxlen']))
+        test_data[feat] = test_data[feat].apply(get_varlen_sparse_index, args=(varlen_sparse_index_dict, feat, params['maxlen']))
+
     # 统计sparse特征维度: 定义SparseFeat,DenseFeat对象
     fixlen_feature_columns = [SparseFeat(feat, vocabulary_size=training_data[feat].max() + 2, embedding_dim=params["embedding_dim"])
                               for i, feat in enumerate(sparse_features)] + [DenseFeat(feat, 1, )
                                                                             for feat in dense_features]
+    varlen_sparse_feature_columns = [VarLenSparseFeat(SparseFeat(feat, vocabulary_size=len(varlen_sparse_index_dict[feat])+2,
+                                                                 embedding_dim=params["embedding_dim"], embedding_name=feat),
+                                                                 maxlen=params["maxlen"]) for feat in varlen_sparse_features]
 
-    dnn_feature_columns = fixlen_feature_columns
+    dnn_feature_columns = fixlen_feature_columns + varlen_sparse_feature_columns #dnn加入序列特征
     linear_feature_columns = fixlen_feature_columns
 
     # 获取所有的特征名
     feature_names = get_feature_names(linear_feature_columns + dnn_feature_columns)
 
-    # 模型输入数据DataFrame对象
-    train_model_input = {name: training_data[name] for name in feature_names}
-    valid_model_input = {name: valid_data[name] for name in feature_names}
-    test_model_input = {name: test_data[name] for name in feature_names}
+    train_model_input = {name: np.array(training_data[name].values.tolist()) for name in feature_names}
+    valid_model_input = {name: np.array(valid_data[name].values.tolist()) for name in feature_names}
+    test_model_input = {name: np.array(test_data[name].values.tolist()) for name in feature_names}
 
-    #pdb.set_trace()
     # 定义模型、优化器、损失函数
     model = DeepFMSeq(linear_feature_columns, dnn_feature_columns,
                    task='binary',

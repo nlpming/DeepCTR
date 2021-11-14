@@ -34,8 +34,8 @@ default_values = {
 
 # dense,sparse特征
 dense_features = ['times_paid']
-sparse_features = ['age_group', 'industry', 'job', 'marital_status', 'serv_pref_1',
-       'serv_pref_2', 'serv_pref_3', 'serv_pref_4']
+#sparse_features = ['age_group', 'industry', 'job', 'marital_status', 'serv_pref_1', 'serv_pref_2', 'serv_pref_3', 'serv_pref_4']
+sparse_features = ['age_group', 'industry', 'job', 'marital_status', 'serv_pref_1', 'serv_pref_2', 'serv_pref_3', 'serv_pref_4', 'user_id']
 
 def read_file(file_name):
     """读取数据, 并处理默认值"""
@@ -43,7 +43,8 @@ def read_file(file_name):
     data = pd.read_csv(file_name)\
         .fillna(value=default_values)\
         .drop(columns=['func_list_multilabel_1','func_list_multilabel_2','func_list_multilabel_3',
-                       'func_list_multilabel_4','func_list_multilabel_5','user_id'])
+                       'func_list_multilabel_4','func_list_multilabel_5'])\
+        #.drop(columns=['user_id'])
     data[sparse_features] = data[sparse_features].astype('int')
     return data
 
@@ -74,7 +75,7 @@ if __name__ == "__main__":
     # DeepFM网络超参数
     params = {
         "embedding_dim": 10,
-        "dnn_hidden_units": (20, 20, 20),
+        "dnn_hidden_units": (30, 30),
         "dnn_activation": "relu",
         "dnn_use_bn": False,
         "dnn_dropout": 0.0,
@@ -92,7 +93,7 @@ if __name__ == "__main__":
     test_data_path = '/home/czm/Public/interview_user_sex_predictor/data/train/test.csv'
     sparse_index_dict_path = '/home/czm/Public/interview_user_sex_predictor/data/sparse_index_dict.json'
     model_path = './models/deepfm'
-    log_path = './logs'
+    log_path = './logs/deepfm'
 
     training_data = read_file(training_data_path)
     valid_data = read_file(valid_data_path)
@@ -120,21 +121,28 @@ if __name__ == "__main__":
         valid_data[feat] = valid_data[feat].apply(get_sparse_index, args=(sparse_index_dict, feat))
         test_data[feat] = test_data[feat].apply(get_sparse_index, args=(sparse_index_dict, feat))
 
-    # 统计sparse特征维度: 定义SparseFeat,DenseFeat对象
-    fixlen_feature_columns = [SparseFeat(feat, vocabulary_size=training_data[feat].max() + 2, embedding_dim=params["embedding_dim"])
-                              for i, feat in enumerate(sparse_features)] + [DenseFeat(feat, 1, )
-                                                                            for feat in dense_features]
+    # 生成linear_feature_columns, dnn_feature_columns
+    linear_feature_columns = []
+    for feat in sparse_features:
+        if feat != 'user_id':
+            linear_feature_columns.append(SparseFeat(feat, vocabulary_size=training_data[feat].max() + 2, embedding_dim=params["embedding_dim"]))
+    for feat in dense_features:
+        linear_feature_columns.append(DenseFeat(feat, 1, ))
 
-    dnn_feature_columns = fixlen_feature_columns
-    linear_feature_columns = fixlen_feature_columns
+    dnn_feature_columns = []
+    for feat in sparse_features:
+        if feat != 'user_id':
+            dnn_feature_columns.append(SparseFeat(feat, vocabulary_size=training_data[feat].max() + 2, embedding_dim=params["embedding_dim"]))
+    for feat in dense_features:
+        dnn_feature_columns.append(DenseFeat(feat, 1, ))
 
     # 获取所有的特征名
     feature_names = get_feature_names(linear_feature_columns + dnn_feature_columns)
 
     # 模型输入数据DataFrame对象
-    train_model_input = {name: training_data[name] for name in feature_names}
-    valid_model_input = {name: valid_data[name] for name in feature_names}
-    test_model_input = {name: test_data[name] for name in feature_names}
+    train_model_input = {name: np.array(training_data[name].values.tolist()) for name in feature_names}
+    valid_model_input = {name: np.array(valid_data[name].values.tolist()) for name in feature_names}
+    test_model_input = {name: np.array(test_data[name].values.tolist()) for name in feature_names}
 
     #pdb.set_trace()
     # 定义模型、优化器、损失函数
@@ -170,9 +178,14 @@ if __name__ == "__main__":
 
     # predict过程
     model.load_weights(model_path)
+
+    pred_ans = model.predict(valid_model_input, batch_size=params['batch_size']) #预测结果为正样本概率值
+    print("valid LogLoss", round(log_loss(valid_data[target].values, pred_ans), 6))
+    print("valid AUC", round(roc_auc_score(valid_data[target].values, pred_ans), 6))
+
     pred_ans = model.predict(test_model_input, batch_size=params['batch_size']) #预测结果为正样本概率值
-    print("test LogLoss", round(log_loss(test_data[target].values, pred_ans), 4))
-    print("test AUC", round(roc_auc_score(test_data[target].values, pred_ans), 4))
+    print("test LogLoss", round(log_loss(test_data[target].values, pred_ans), 6))
+    print("test AUC", round(roc_auc_score(test_data[target].values, pred_ans), 6))
 
 
 
