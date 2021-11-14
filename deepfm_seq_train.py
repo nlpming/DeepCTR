@@ -114,7 +114,8 @@ if __name__ == "__main__":
     valid_model_input = {name: np.array(valid_data[name].values.tolist()) for name in feature_names}
 
     # 4. 构建模型
-    model = build_deepfm_seq_model(sparse_features, dense_features, sparse_dict, dense_dict, varlen_sparse_dict, params)
+    model = build_deepfm_seq_model(sparse_features, dense_features, varlen_sparse_features,
+                                   sparse_dict, dense_dict, varlen_sparse_dict, params)
     model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=params['learning_rate']),
                loss=tf.keras.losses.BinaryCrossentropy(),
                metrics=[tf.keras.metrics.AUC()])
