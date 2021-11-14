@@ -46,8 +46,6 @@ def read_file(file_name):
 
     data = pd.read_csv(file_name)\
         .fillna(value=default_values)\
-        .drop(columns=['func_list_multilabel_1','func_list_multilabel_2','func_list_multilabel_3',
-                       'func_list_multilabel_4','func_list_multilabel_5'])\
         .drop(columns=['user_id'])
     data[sparse_features] = data[sparse_features].astype('int')
 
