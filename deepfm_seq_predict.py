@@ -62,7 +62,7 @@ if __name__ == "__main__":
         test_data[feat] = test_data[feat].apply(get_varlen_sparse_index, args=(varlen_sparse_dict, feat, params['maxlen']))
 
     # 3. 测试输入数据
-    feature_names = dense_features + sparse_features
+    feature_names = dense_features + sparse_features + varlen_sparse_features
     test_model_input = {name: np.array(test_data[name].values.tolist()) for name in feature_names}
 
     # 4. 构建模型

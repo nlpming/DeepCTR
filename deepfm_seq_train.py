@@ -109,7 +109,7 @@ if __name__ == "__main__":
         valid_data[feat] = valid_data[feat].apply(get_varlen_sparse_index, args=(varlen_sparse_dict, feat, params['maxlen']))
 
     # 3. 构建模型输入数据
-    feature_names = sparse_features + dense_features
+    feature_names = sparse_features + dense_features + varlen_sparse_features
     train_model_input = {name: np.array(training_data[name].values.tolist()) for name in feature_names}
     valid_model_input = {name: np.array(valid_data[name].values.tolist()) for name in feature_names}
 
