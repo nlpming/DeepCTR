@@ -14,7 +14,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = ""
 
 from deepctr.models import DeepFM
 from deepctr.feature_column import SparseFeat, DenseFeat, get_feature_names
-from deepfm_config import sparse_features, dense_features
+from deepfm_config import sparse_features, dense_features, params
 from deepfm_config import read_file, generate_sparse_dict, get_sparse_index, generate_dense_dict, get_dense_norm
 
 def build_deepfm_model(sparse_features, dense_features, sparse_dict, dense_dict, params):
@@ -49,22 +49,7 @@ def build_deepfm_model(sparse_features, dense_features, sparse_dict, dense_dict,
     return model
 
 if __name__ == "__main__":
-    # 1. DeepFM网络超参数
-    params = {
-        "embedding_dim": 10,
-        "dnn_hidden_units": (30, 30),
-        "dnn_activation": "relu",
-        "dnn_use_bn": False,
-        "dnn_dropout": 0.0,
-        "l2_reg_linear": 0.00001,
-        "l2_reg_embedding": 0.00001,
-        "l2_reg_dnn": 0,
-        "learning_rate": 0.001,
-        "batch_size": 128,
-        "epochs": 20,
-    }
-
-    # 2. 输入输出路径
+    # 1. 输入输出路径
     data_path = "/home/czm/Public/interview_user_sex_predictor"
     training_data_path = os.path.join(data_path, 'data/train/train.csv')
     valid_data_path = os.path.join(data_path, 'data/train/valid.csv')
@@ -77,7 +62,7 @@ if __name__ == "__main__":
     valid_data = read_file(valid_data_path)
     target = ['label_value']
 
-    # 3. 特征处理
+    # 2. 特征处理
     # 连续特征归一化
     dense_dict = {}
     generate_dense_dict(training_data, dense_features, output_file=dense_dict_path)
@@ -102,12 +87,12 @@ if __name__ == "__main__":
         training_data[feat] = training_data[feat].apply(get_sparse_index, args=(sparse_dict, feat))
         valid_data[feat] = valid_data[feat].apply(get_sparse_index, args=(sparse_dict, feat))
 
-    # 4. 构建模型输入数据
+    # 3. 构建模型输入数据
     feature_names = sparse_features + dense_features
     train_model_input = {name: np.array(training_data[name].values.tolist()) for name in feature_names}
     valid_model_input = {name: np.array(valid_data[name].values.tolist()) for name in feature_names}
 
-    # 5. 构建模型
+    # 4. 构建模型
     model = build_deepfm_model(sparse_features, dense_features, sparse_dict, dense_dict, params)
     model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=params['learning_rate']),
                loss=tf.keras.losses.BinaryCrossentropy(),
@@ -124,12 +109,12 @@ if __name__ == "__main__":
             log_dir=log_path, histogram_freq=0, write_graph=True, write_images=True, update_freq=100)
     callbacks = [checkpoint, reduce_lr, earlystopping, tensorboard]
 
-    # 7. training过程
+    # 5. training过程
     model.fit(train_model_input, training_data[target].values,
         validation_data=(valid_model_input, valid_data[target].values),
         batch_size=params['batch_size'], epochs=params['epochs'], verbose=2, shuffle=True, callbacks=callbacks)
 
-    # 8. predict过程
+    # 6. predict过程
     model.load_weights(model_path)
 
     pred_ans = model.predict(valid_model_input, batch_size=params['batch_size']) #预测结果为正样本概率值

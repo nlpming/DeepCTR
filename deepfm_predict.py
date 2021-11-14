@@ -12,9 +12,9 @@ from sklearn.metrics import log_loss, roc_auc_score
 #cpu运行
 os.environ["CUDA_VISIBLE_DEVICES"] = ""
 
-from deepfm_config import sparse_features, dense_features
+from deepfm_config import sparse_features, dense_features, params
 from deepfm_config import read_file, generate_sparse_dict, get_sparse_index, generate_dense_dict, get_dense_norm
-from deepfm_train import params, build_deepfm_model
+from deepfm_train import build_deepfm_model
 
 if __name__ == "__main__":
     # 1. 输入输出路径

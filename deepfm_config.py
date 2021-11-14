@@ -19,6 +19,21 @@ default_values = {
     "times_paid": 3.466193  #均值
 }
 
+# DeepFM网络超参数
+params = {
+    "embedding_dim": 10,
+    "dnn_hidden_units": (30, 30),
+    "dnn_activation": "relu",
+    "dnn_use_bn": False,
+    "dnn_dropout": 0.0,
+    "l2_reg_linear": 0.00001,
+    "l2_reg_embedding": 0.00001,
+    "l2_reg_dnn": 0,
+    "learning_rate": 0.001,
+    "batch_size": 128,
+    "epochs": 20,
+}
+
 # dense,sparse特征
 dense_features = ['times_paid']
 sparse_features = ['age_group', 'industry', 'job', 'marital_status', 'serv_pref_1', 'serv_pref_2', 'serv_pref_3', 'serv_pref_4']
