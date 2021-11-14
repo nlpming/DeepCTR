@@ -109,20 +109,21 @@ if __name__ == "__main__":
                metrics=[tf.keras.metrics.AUC()])
 
     # call back function
-    checkpoint = ModelCheckpoint(
-	    model_path, monitor='val_loss', verbose=1, save_best_only=True, mode='min')
+    # checkpoint = ModelCheckpoint(
+	#     model_path, monitor='val_loss', verbose=1, save_best_only=True, mode='min')
     reduce_lr = ReduceLROnPlateau(
 	    monitor='val_loss', factor=0.8, patience=2, min_lr=0.0001, verbose=1)
     earlystopping = EarlyStopping(
 	    monitor='val_loss', min_delta=0.0001, patience=8, verbose=1, mode='auto')
     tensorboard = TensorBoard(
             log_dir=os.path.join(log_path,"deepfm"), histogram_freq=0, write_graph=True, write_images=True, update_freq=100)
-    callbacks = [checkpoint, reduce_lr, earlystopping, tensorboard]
+    callbacks = [reduce_lr, earlystopping, tensorboard]
 
     # 7. training过程
     history = model.fit(train_model_input, training_data[target].values,
                         validation_data=(valid_model_input, valid_data[target].values),
                         batch_size=params['batch_size'], epochs=params['epochs'], verbose=2, shuffle=True, callbacks=callbacks)
+    model.save(model_path)
 
     # 8. predict过程
     deepfm_model = tf.keras.models.load_model(model_path)
