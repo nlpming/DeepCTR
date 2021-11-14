@@ -110,7 +110,7 @@ if __name__ == "__main__":
 
     # call back function
     checkpoint = ModelCheckpoint(
-	    model_path, monitor='val_loss', verbose=1, save_best_only=True, save_weights_only=True, mode='min')
+	    model_path, monitor='val_loss', verbose=1, save_best_only=True, mode='min')
     reduce_lr = ReduceLROnPlateau(
 	    monitor='val_loss', factor=0.8, patience=2, min_lr=0.0001, verbose=1)
     earlystopping = EarlyStopping(
@@ -125,9 +125,9 @@ if __name__ == "__main__":
                         batch_size=params['batch_size'], epochs=params['epochs'], verbose=2, shuffle=True, callbacks=callbacks)
 
     # 8. predict过程
-    model.load_weights(model_path)
+    deepfm_model = tf.keras.models.load_model(model_path)
 
-    pred_ans = model.predict(valid_model_input, batch_size=params['batch_size']) #预测结果为正样本概率值
+    pred_ans = deepfm_model.predict(valid_model_input, batch_size=params['batch_size']) #预测结果为正样本概率值
     print("valid LogLoss", round(log_loss(valid_data[target].values, pred_ans), 6))
     print("valid AUC", round(roc_auc_score(valid_data[target].values, pred_ans), 6))
 
