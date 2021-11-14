@@ -109,8 +109,8 @@ if __name__ == "__main__":
                metrics=[tf.keras.metrics.AUC()])
 
     # call back function
-    # checkpoint = ModelCheckpoint(
-	#     model_path, monitor='val_loss', verbose=1, save_best_only=True, mode='min')
+    checkpoint = ModelCheckpoint(
+	    model_path, monitor='val_loss', verbose=1, save_best_only=True, mode='min')
     reduce_lr = ReduceLROnPlateau(
 	    monitor='val_loss', factor=0.8, patience=2, min_lr=0.0001, verbose=1)
     earlystopping = EarlyStopping(
