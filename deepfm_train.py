@@ -116,7 +116,7 @@ if __name__ == "__main__":
     earlystopping = EarlyStopping(
 	    monitor='val_loss', min_delta=0.0001, patience=8, verbose=1, mode='auto')
     tensorboard = TensorBoard(
-            log_dir=os.path.join(log_path,"deepfm"), histogram_freq=0, write_graph=True, write_images=True, update_freq=100)
+            log_dir=log_path, histogram_freq=0, write_graph=True, write_images=True, update_freq=100)
     callbacks = [reduce_lr, earlystopping, tensorboard]
 
     # 7. training过程
