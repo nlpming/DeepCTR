@@ -130,7 +130,7 @@ if __name__ == "__main__":
         batch_size=params['batch_size'], epochs=params['epochs'], verbose=2, shuffle=True, callbacks=callbacks)
 
     # 8. predict过程
-    model.load_weight(model_path)
+    model.load_weights(model_path)
 
     pred_ans = model.predict(valid_model_input, batch_size=params['batch_size']) #预测结果为正样本概率值
     print("valid LogLoss", round(log_loss(valid_data[target].values, pred_ans), 6))

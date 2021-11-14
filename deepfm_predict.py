@@ -59,7 +59,7 @@ if __name__ == "__main__":
     model = build_deepfm_model(sparse_features, dense_features, sparse_dict, dense_dict, params)
 
     # 5. 加载模型参数并预测
-    model.load_weight(model_path)
+    model.load_weights(model_path)
 
     pred_ans = model.predict(test_model_input, batch_size=256) #预测结果为正样本概率值
     print("valid LogLoss", round(log_loss(test_data[target].values, pred_ans), 6))
