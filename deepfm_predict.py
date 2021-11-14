@@ -23,7 +23,7 @@ if __name__ == "__main__":
 
     sparse_dict_path = os.path.join(data_path, 'data/deepfm_sparse_dict.json')
     dense_dict_path = os.path.join(data_path, 'data/deepfm_dense_dict.json')
-    model_path = './record/models/deepfm'
+    model_path = './record/models/deepfm/sex_predict'
     log_path = './record/logs/deepfm'
 
     test_data = read_file(test_data_path)
@@ -49,7 +49,6 @@ if __name__ == "__main__":
 
     for feat in sparse_features:
         test_data[feat] = test_data[feat].apply(get_sparse_index, args=(sparse_dict, feat))
-        test_data[feat] = test_data[feat].apply(get_sparse_index, args=(sparse_dict, feat))
 
     # 3. 测试输入数据
     feature_names = dense_features + sparse_features
@@ -62,6 +61,6 @@ if __name__ == "__main__":
     model.load_weights(model_path)
 
     pred_ans = model.predict(test_model_input, batch_size=256) #预测结果为正样本概率值
-    print("valid LogLoss", round(log_loss(test_data[target].values, pred_ans), 6))
-    print("valid AUC", round(roc_auc_score(test_data[target].values, pred_ans), 6))
+    print("test LogLoss", round(log_loss(test_data[target].values, pred_ans), 6))
+    print("test AUC", round(roc_auc_score(test_data[target].values, pred_ans), 6))
 

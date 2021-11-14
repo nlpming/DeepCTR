@@ -55,7 +55,7 @@ if __name__ == "__main__":
     valid_data_path = os.path.join(data_path, 'data/train/valid.csv')
     sparse_dict_path = os.path.join(data_path, 'data/deepfm_sparse_dict.json')
     dense_dict_path = os.path.join(data_path, 'data/deepfm_dense_dict.json')
-    model_path = './record/models/deepfm'
+    model_path = './record/models/deepfm/sex_predict'
     log_path = './record/logs/deepfm'
 
     training_data = read_file(training_data_path)
